@@ -1,0 +1,336 @@
+@import "tailwindcss";
+
+:root,
+html.dark {
+  --background: #0a0a0a;
+  --foreground: #e0e0e0;
+  --accent: #ccc;
+  --accent-hover: #aaa;
+  --card-bg: #141414;
+  --card-border: #888;
+  --card-selected: #e0e0e0;
+  --muted: #777;
+  --panel-shadow: #000;
+  --btn-border: #999;
+
+  --comic-red: #333;
+  --comic-blue: #333;
+  --comic-cyan: #333;
+  --comic-magenta: #333;
+  --comic-yellow: #333;
+  --comic-green: #333;
+  --comic-purple: #333;
+  --comic-orange: #333;
+}
+
+html.light {
+  --background: #fff;
+  --foreground: #000;
+  --accent: #000;
+  --accent-hover: #333;
+  --card-bg: #f5f5f5;
+  --card-border: #000;
+  --card-selected: #000;
+  --muted: #666;
+  --panel-shadow: rgba(0,0,0,0.3);
+  --btn-border: #000;
+
+  --comic-red: #000;
+  --comic-blue: #000;
+  --comic-cyan: #000;
+  --comic-magenta: #000;
+  --comic-yellow: #000;
+  --comic-green: #000;
+  --comic-purple: #000;
+  --comic-orange: #000;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-card-bg: var(--card-bg);
+  --color-card-border: var(--card-border);
+  --color-card-selected: var(--card-selected);
+  --color-muted: var(--muted);
+
+  --color-comic-red: var(--comic-red);
+  --color-comic-blue: var(--comic-blue);
+  --color-comic-cyan: var(--comic-cyan);
+  --color-comic-magenta: var(--comic-magenta);
+  --color-comic-yellow: var(--comic-yellow);
+  --color-comic-green: var(--comic-green);
+  --color-comic-purple: var(--comic-purple);
+  --color-comic-orange: var(--comic-orange);
+  --color-panel-shadow: var(--panel-shadow);
+  --color-btn-border: var(--btn-border);
+
+  --font-sans: var(--font-inter);
+  --font-display: var(--font-bangers);
+
+  --animate-pop: pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  --animate-slide-up: slide-up 0.5s ease-out both;
+  --animate-slam: slam 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+html {
+  background: var(--background);
+}
+
+body {
+  background: transparent;
+  color: var(--foreground);
+  font-family: var(--font-bangers), Impact, sans-serif;
+}
+
+/* ── Animations ─────────────────────────────────────── */
+
+@keyframes pop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes slide-up {
+  0% { transform: translateY(40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slam {
+  0% { transform: scale(3); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+
+/* ── Scroll Reveal ─────────────────────────────────── */
+
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.35s; }
+.reveal-delay-5 { transition-delay: 0.4s; }
+.reveal-delay-6 { transition-delay: 0.45s; }
+.reveal-delay-7 { transition-delay: 0.5s; }
+.reveal-delay-8 { transition-delay: 0.55s; }
+.reveal-delay-9 { transition-delay: 0.6s; }
+
+/* ── Comic Title Lettering ──────────────────────────── */
+
+.comic-title {
+  font-family: var(--font-bangers), Impact, sans-serif;
+  -webkit-text-stroke: 3px var(--panel-shadow);
+  paint-order: stroke fill;
+  text-shadow:
+    4px 4px 0 var(--panel-shadow),
+    -1px -1px 0 var(--panel-shadow),
+    1px -1px 0 var(--panel-shadow),
+    -1px 1px 0 var(--panel-shadow);
+}
+
+/* ── Halftone Dot Patterns ──────────────────────────── */
+
+.halftone {
+  position: relative;
+}
+.halftone::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  background-size: 12px 12px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.halftone-dense {
+  position: relative;
+}
+.halftone-dense::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 6px 6px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Starburst (12-point) ───────────────────────────── */
+
+.starburst {
+  clip-path: polygon(
+    50% 0%, 63% 13%, 75% 0%, 80% 18%,
+    100% 15%, 87% 30%, 100% 50%, 87% 63%,
+    100% 75%, 80% 80%, 75% 100%, 63% 87%,
+    50% 100%, 37% 87%, 25% 100%, 20% 80%,
+    0% 75%, 13% 63%, 0% 50%, 13% 30%,
+    0% 15%, 20% 18%, 25% 0%, 37% 13%
+  );
+}
+
+/* ── Speed Lines ────────────────────────────────────── */
+
+.speed-lines {
+  position: relative;
+  overflow: hidden;
+}
+.speed-lines::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 8px,
+    rgba(255,255,255,0.03) 8px,
+    rgba(255,255,255,0.03) 10px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Zoom Lines (converging radial) ─────────────────── */
+
+.zoom-lines {
+  position: relative;
+  overflow: hidden;
+}
+.zoom-lines::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  width: 200%;
+  height: 200%;
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 4deg,
+    rgba(255,255,255,0.03) 4deg,
+    rgba(255,255,255,0.03) 5deg
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+html.light .zoom-lines::before {
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 4deg,
+    rgba(0,0,0,0.03) 4deg,
+    rgba(0,0,0,0.03) 5deg
+  );
+}
+
+/* ── Zoom Lines Raw (for rotating backdrop) ───────────── */
+
+.zoom-lines-raw {
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 4deg,
+    rgba(255,255,255,0.03) 4deg,
+    rgba(255,255,255,0.03) 5deg
+  );
+}
+html.light .zoom-lines-raw {
+  background: repeating-conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    transparent 4deg,
+    rgba(0,0,0,0.03) 4deg,
+    rgba(0,0,0,0.03) 5deg
+  );
+}
+
+/* ── Comic Panel ────────────────────────────────────── */
+
+.comic-panel {
+  border: 3px solid var(--accent);
+  box-shadow: 6px 6px 0 var(--panel-shadow);
+  background: var(--card-bg);
+}
+
+/* ── Speech Bubble ──────────────────────────────────── */
+
+.speech-bubble {
+  position: relative;
+  background: #fff;
+  color: #111;
+  border-radius: 1rem;
+  padding: 1rem 1.5rem;
+  border: 2px solid #000;
+}
+.speech-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -16px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 14px solid transparent;
+  border-right: 14px solid transparent;
+  border-top: 16px solid #000;
+}
+
+/* ── Comic Caption Box ─────────────────────────────── */
+
+.comic-caption {
+  background: #fff;
+  color: #000;
+  border: 3px solid #000;
+  box-shadow: 5px 5px 0 #000;
+  padding: 1.25rem 1.5rem;
+  position: relative;
+}
+
+/* ── Comic Button ───────────────────────────────────── */
+
+.comic-btn {
+  display: inline-block;
+  font-family: var(--font-bangers), Impact, sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.05em;
+  border: 3px solid var(--btn-border);
+  box-shadow: 4px 4px 0 var(--panel-shadow);
+  padding: 0.75rem 2rem;
+  cursor: pointer;
+  transition: transform 0.1s, box-shadow 0.1s;
+  text-decoration: none;
+}
+.comic-btn:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 var(--panel-shadow);
+}
+.comic-btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 var(--panel-shadow);
+}
+
+/* ── Diagonal Stripes ───────────────────────────────── */
+
+.diagonal-stripes {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.02) 10px,
+    rgba(255,255,255,0.02) 20px
+  );
+}
