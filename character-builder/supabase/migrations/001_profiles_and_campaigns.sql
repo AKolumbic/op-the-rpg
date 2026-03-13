@@ -276,7 +276,26 @@ create policy "Players can remove own characters from campaign"
     )
   );
 
--- Extended characters access for campaign members
+-- ═══ Characters RLS policies ═══════════════════════════════════════════════
+-- (characters table + RLS assumed to already exist)
+
+create policy "Users can read own characters"
+  on public.characters for select
+  using (auth.uid() = user_id);
+
+create policy "Users can create own characters"
+  on public.characters for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update own characters"
+  on public.characters for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete own characters"
+  on public.characters for delete
+  using (auth.uid() = user_id);
+
 create policy "Campaign members can read campaign characters"
   on public.characters for select
   using (
@@ -285,6 +304,12 @@ create policy "Campaign members can read campaign characters"
       join public.campaign_members cm on cm.campaign_id = cc.campaign_id
       where cc.character_id = characters.id and cm.user_id = auth.uid()
     )
+  );
+
+create policy "Admins can read all characters"
+  on public.characters for select
+  using (
+    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
   );
 
 -- ═══ RPC: Join by invite code ═══════════════════════════════════════════════
