@@ -20,6 +20,10 @@ import {
   getScalingValues,
   getOriginData,
 } from "@/lib/level-up";
+import {
+  getSubclass,
+  getSubclassFeaturesUpToLevel,
+} from "@/data/subclasses";
 import Navbar from "@/components/Navbar";
 import BackstoryPreview from "@/components/builder/BackstoryPreview";
 import LevelUpModal from "@/components/LevelUpModal";
@@ -78,6 +82,10 @@ export default function CharacterPage() {
   const levelUpCheck = canLevelUp(data);
   const features = getFeaturesUpToLevel(data.originStory, data.level);
   const scalingValues = getScalingValues(data.originStory, data.level);
+  const subclass = data.subclass ? getSubclass(data.subclass) : null;
+  const subclassFeatures = data.subclass
+    ? getSubclassFeaturesUpToLevel(data.subclass, data.level)
+    : [];
 
   // All feats: creation + home town + level-up
   const allFeatIds = [
@@ -115,6 +123,9 @@ export default function CharacterPage() {
                 )}
                 <p className="font-display text-white/70 text-lg mt-1 tracking-wide">
                   Level {data.level} {variant?.name} {origin?.name}
+                  {subclass && (
+                    <span className="text-white/50"> — {subclass.name}</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -309,6 +320,33 @@ export default function CharacterPage() {
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs text-muted font-display">Lv {feature.level}</span>
                       <h4 className="font-display text-sm text-accent tracking-wide">
+                        {feature.name}
+                      </h4>
+                    </div>
+                    <p className="text-xs text-muted mt-1 whitespace-pre-line">
+                      {feature.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Subclass Features */}
+          {subclassFeatures.length > 0 && (
+            <div className="comic-panel p-4 sm:col-span-2">
+              <h3 className="font-display text-xs text-muted tracking-widest uppercase mb-3">
+                {subclass?.name} Features
+              </h3>
+              <div className="space-y-3">
+                {subclassFeatures.map((feature) => (
+                  <div
+                    key={`sc-${feature.level}-${feature.name}`}
+                    className="p-3 border-2 border-comic-blue/30 bg-comic-blue/5 shadow-[2px_2px_0_rgba(0,0,0,0.1)]"
+                  >
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xs text-muted font-display">Lv {feature.level}</span>
+                      <h4 className="font-display text-sm text-comic-blue tracking-wide">
                         {feature.name}
                       </h4>
                     </div>

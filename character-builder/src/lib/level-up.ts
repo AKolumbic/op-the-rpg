@@ -1,5 +1,9 @@
 import { ORIGIN_STORY_FEATURES } from "@/data/origin-story-features";
 import type { OriginFeature, OriginStoryFeatures } from "@/data/origin-story-features";
+import {
+  getSubclassFeaturesAtLevel,
+  type SubclassFeature,
+} from "@/data/subclasses";
 import type { CharacterData } from "./types";
 import { abilityModifier } from "./utils";
 
@@ -12,6 +16,9 @@ export function proficiencyBonus(level: number): number {
 
 // Levels that grant a half-feat pick (ASI levels in SRD 5.2)
 export const FEAT_LEVELS = [4, 8, 12] as const;
+
+// Level 3 is when subclass selection happens for all origins
+export const SUBCLASS_LEVEL = 3;
 
 export function isFeatLevel(level: number): boolean {
   return (FEAT_LEVELS as readonly number[]).includes(level);
@@ -94,7 +101,11 @@ export function canLevelUp(data: CharacterData): { ok: boolean; reason?: string 
     return { ok: false, reason: "Already at max level (12)." };
   }
 
-  const nextLevel = data.level + 1;
+  // Check subclass chosen if past level 3
+  if (data.level >= SUBCLASS_LEVEL && !data.subclass) {
+    return { ok: false, reason: "You need to choose a subclass first." };
+  }
+
   const prevFeatLevel = FEAT_LEVELS.filter((l) => l <= data.level);
 
   // Check that all prior feat levels have a feat chosen
@@ -107,18 +118,35 @@ export function canLevelUp(data: CharacterData): { ok: boolean; reason?: string 
   return { ok: true };
 }
 
+// Check if a given level is the subclass selection level
+export function isSubclassSelectionLevel(level: number): boolean {
+  return level === SUBCLASS_LEVEL;
+}
+
 // Summary of what happens at a given level
-export function levelUpSummary(originId: string, level: number) {
+export function levelUpSummary(
+  originId: string,
+  level: number,
+  subclassId?: string
+) {
   const features = getFeaturesAtLevel(originId, level);
   const hasFeatPick = isFeatLevel(level);
+  const needsSubclass = level === SUBCLASS_LEVEL;
   const profBonus = proficiencyBonus(level);
   const prevProfBonus = level > 1 ? proficiencyBonus(level - 1) : 0;
   const profBonusIncreased = profBonus > prevProfBonus;
+
+  // Get subclass features at this level (if character has a subclass)
+  const subclassFeatures: SubclassFeature[] = subclassId
+    ? getSubclassFeaturesAtLevel(subclassId, level)
+    : [];
 
   return {
     level,
     features,
     hasFeatPick,
+    needsSubclass,
+    subclassFeatures,
     profBonus,
     profBonusIncreased,
   };

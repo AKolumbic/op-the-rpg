@@ -3,10 +3,16 @@
 import { useState } from "react";
 import { FEATS } from "@/data/feats";
 import {
+  getSubclassesForOrigin,
+  getSubclassFeaturesAtLevel,
+  type SubclassDefinition,
+} from "@/data/subclasses";
+import {
   levelUpSummary,
   computeHP,
   isFeatLevel,
   getOriginData,
+  isSubclassSelectionLevel,
 } from "@/lib/level-up";
 import type { CharacterData } from "@/lib/types";
 
@@ -19,12 +25,19 @@ interface Props {
 export default function LevelUpModal({ character, onConfirm, onClose }: Props) {
   const { data } = character;
   const nextLevel = data.level + 1;
-  const summary = levelUpSummary(data.originStory, nextLevel);
   const origin = getOriginData(data.originStory);
 
+  const [selectedSubclass, setSelectedSubclass] = useState(data.subclass || "");
   const [selectedFeat, setSelectedFeat] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Recompute summary when subclass selection changes (for subclass features preview)
+  const summary = levelUpSummary(
+    data.originStory,
+    nextLevel,
+    selectedSubclass || data.subclass
+  );
 
   const generalFeats = FEATS.filter((f) => f.category === "general");
 
@@ -37,8 +50,15 @@ export default function LevelUpModal({ character, onConfirm, onClose }: Props) {
   const newHP = computeHP(previewData);
   const hpGain = newHP - currentHP;
 
+  // Subclass logic
+  const needsSubclass = isSubclassSelectionLevel(nextLevel) && !data.subclass;
+  const availableSubclasses = needsSubclass
+    ? getSubclassesForOrigin(data.originStory)
+    : [];
+
   const needsFeat = summary.hasFeatPick;
-  const canConfirm = !needsFeat || !!selectedFeat;
+  const canConfirm =
+    (!needsFeat || !!selectedFeat) && (!needsSubclass || !!selectedSubclass);
 
   async function handleConfirm() {
     setSaving(true);
@@ -47,6 +67,10 @@ export default function LevelUpModal({ character, onConfirm, onClose }: Props) {
       const patch: Partial<CharacterData> = {
         level: nextLevel,
       };
+
+      if (needsSubclass && selectedSubclass) {
+        patch.subclass = selectedSubclass;
+      }
 
       if (needsFeat && selectedFeat) {
         patch.levelFeats = {
@@ -107,6 +131,106 @@ export default function LevelUpModal({ character, onConfirm, onClose }: Props) {
             <p className="text-lg font-display">
               +{summary.profBonus - 1} → +{summary.profBonus}
             </p>
+          </div>
+        )}
+
+        {/* Subclass Selection */}
+        {needsSubclass && (
+          <div className="mb-6">
+            <h3 className="font-display tracking-wide mb-1 text-comic-blue">
+              Choose Your Subclass
+            </h3>
+            <p className="text-xs text-muted mb-3">
+              Your specialization defines how your powers develop from here.
+              This choice is permanent.
+            </p>
+            <div className="space-y-3">
+              {availableSubclasses.map((sc) => {
+                const isSelected = selectedSubclass === sc.id;
+                const previewFeatures = sc.features.filter(
+                  (f) => f.level === nextLevel
+                );
+
+                return (
+                  <button
+                    key={sc.id}
+                    onClick={() => setSelectedSubclass(sc.id)}
+                    className={`w-full text-left p-4 border-2 transition-all ${
+                      isSelected
+                        ? "border-comic-blue bg-comic-blue/10 shadow-[4px_4px_0_#000]"
+                        : "border-card-border bg-card-bg hover:border-comic-blue/50 shadow-[2px_2px_0_rgba(0,0,0,0.2)]"
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between">
+                      <h4
+                        className={`font-display text-sm tracking-wide ${
+                          isSelected ? "text-comic-blue" : ""
+                        }`}
+                      >
+                        {sc.name}
+                      </h4>
+                      <span className="text-xs text-muted italic">
+                        SRD: {sc.srdName}
+                      </span>
+                    </div>
+                    <p className="text-xs text-accent italic mt-1">
+                      &ldquo;{sc.quote}&rdquo;
+                    </p>
+                    <p className="text-xs text-muted mt-2">
+                      {sc.description}
+                    </p>
+
+                    {/* Preview level 3 features */}
+                    {previewFeatures.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-card-border">
+                        <p className="text-xs font-display text-muted tracking-wide mb-1">
+                          Level {nextLevel} Features:
+                        </p>
+                        {previewFeatures.map((f) => (
+                          <div key={f.name} className="mt-1">
+                            <p className="text-xs font-display text-accent">
+                              {f.name}
+                            </p>
+                            <p className="text-xs text-muted mt-0.5">
+                              {f.description.length > 150
+                                ? f.description.slice(0, 150) + "..."
+                                : f.description}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Subclass Features (at later subclass feature levels) */}
+        {!needsSubclass && summary.subclassFeatures.length > 0 && (
+          <div className="mb-6">
+            <h3 className="font-display tracking-wide mb-3 text-comic-blue">
+              Subclass Features
+            </h3>
+            <div className="space-y-3">
+              {summary.subclassFeatures.map((feature) => (
+                <div
+                  key={feature.name}
+                  className="p-4 border-2 border-comic-blue/30 bg-comic-blue/5 shadow-[2px_2px_0_rgba(0,0,0,0.2)]"
+                >
+                  <h4 className="font-display text-sm text-comic-blue tracking-wide">
+                    {feature.name}
+                  </h4>
+                  <p className="text-xs text-muted mt-1 italic">
+                    SRD: {feature.srdName}
+                  </p>
+                  <p className="text-sm text-muted mt-2 whitespace-pre-line">
+                    {feature.description}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
