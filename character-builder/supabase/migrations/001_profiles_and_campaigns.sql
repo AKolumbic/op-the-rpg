@@ -1,6 +1,6 @@
 -- ============================================================================
 -- Migration 001: Profiles, Campaigns, and Role-Based Permissions
--- Tables first, then triggers, then RLS policies
+-- Tables first, then triggers, then security-definer helpers, then RLS policies
 -- ============================================================================
 
 -- Helper: updated_at trigger function
@@ -96,6 +96,39 @@ from auth.users
 where id not in (select id from public.profiles)
 on conflict do nothing;
 
+-- ═══ SECURITY DEFINER HELPERS ══════════════════════════════════════════════
+-- These functions bypass RLS to prevent infinite recursion in policies that
+-- need to check membership/admin status on tables protected by RLS.
+
+create or replace function public.get_user_campaign_ids(uid uuid)
+returns setof uuid as $$
+  select campaign_id from public.campaign_members where user_id = uid;
+$$ language sql security definer stable;
+
+create or replace function public.is_campaign_gm(cid uuid, uid uuid)
+returns boolean as $$
+  select exists(
+    select 1 from public.campaign_members
+    where campaign_id = cid and user_id = uid and role = 'gm'
+  );
+$$ language sql security definer stable;
+
+create or replace function public.is_campaign_member_fn(cid uuid, uid uuid)
+returns boolean as $$
+  select exists(
+    select 1 from public.campaign_members
+    where campaign_id = cid and user_id = uid
+  );
+$$ language sql security definer stable;
+
+create or replace function public.is_admin_fn(uid uuid)
+returns boolean as $$
+  select coalesce(
+    (select is_admin from public.profiles where id = uid),
+    false
+  );
+$$ language sql security definer stable;
+
 -- ═══ RLS POLICIES ═══════════════════════════════════════════════════════════
 
 alter table public.profiles enable row level security;
@@ -111,18 +144,15 @@ create policy "Users can read own profile"
 create policy "Campaign co-members can read profiles"
   on public.profiles for select
   using (
-    exists (
-      select 1 from public.campaign_members cm1
-      join public.campaign_members cm2 on cm1.campaign_id = cm2.campaign_id
-      where cm1.user_id = auth.uid() and cm2.user_id = profiles.id
+    profiles.id in (
+      select cm2.user_id from public.campaign_members cm2
+      where cm2.campaign_id in (select public.get_user_campaign_ids(auth.uid()))
     )
   );
 
 create policy "Admins can read all profiles"
   on public.profiles for select
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
 create policy "Users can update own profile"
   on public.profiles for update
@@ -131,25 +161,16 @@ create policy "Users can update own profile"
 
 create policy "Admins can update any profile"
   on public.profiles for update
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
 -- Campaigns policies
 create policy "Members can read their campaigns"
   on public.campaigns for select
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaigns.id and cm.user_id = auth.uid()
-    )
-  );
+  using (campaigns.id in (select public.get_user_campaign_ids(auth.uid())));
 
 create policy "Admins can read all campaigns"
   on public.campaigns for select
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
 create policy "Authenticated users can create campaigns"
   on public.campaigns for insert
@@ -161,9 +182,7 @@ create policy "Creator can update campaign"
 
 create policy "Admins can update any campaign"
   on public.campaigns for update
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
 create policy "Creator can delete campaign"
   on public.campaigns for delete
@@ -171,77 +190,37 @@ create policy "Creator can delete campaign"
 
 create policy "Admins can delete any campaign"
   on public.campaigns for delete
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
--- Campaign Members policies
+-- Campaign Members policies (use security definer functions to avoid self-referencing recursion)
 create policy "Members can read co-members"
   on public.campaign_members for select
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_members.campaign_id and cm.user_id = auth.uid()
-    )
-  );
+  using (public.is_campaign_member_fn(campaign_members.campaign_id, auth.uid()));
 
 create policy "GMs can add members"
   on public.campaign_members for insert
-  with check (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_members.campaign_id
-        and cm.user_id = auth.uid()
-        and cm.role = 'gm'
-    )
-  );
+  with check (public.is_campaign_gm(campaign_members.campaign_id, auth.uid()));
 
 create policy "GMs can update member roles"
   on public.campaign_members for update
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_members.campaign_id
-        and cm.user_id = auth.uid()
-        and cm.role = 'gm'
-    )
-  );
+  using (public.is_campaign_gm(campaign_members.campaign_id, auth.uid()));
 
 create policy "GMs can remove members"
   on public.campaign_members for delete
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_members.campaign_id
-        and cm.user_id = auth.uid()
-        and cm.role = 'gm'
-    )
-  );
+  using (public.is_campaign_gm(campaign_members.campaign_id, auth.uid()));
 
 create policy "Members can leave campaigns"
   on public.campaign_members for delete
   using (auth.uid() = user_id);
 
--- Campaign Characters policies
+-- Campaign Characters policies (use security definer functions)
 create policy "Members can view campaign characters"
   on public.campaign_characters for select
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_characters.campaign_id and cm.user_id = auth.uid()
-    )
-  );
+  using (public.is_campaign_member_fn(campaign_characters.campaign_id, auth.uid()));
 
 create policy "GMs can add characters to campaign"
   on public.campaign_characters for insert
-  with check (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_characters.campaign_id
-        and cm.user_id = auth.uid()
-        and cm.role = 'gm'
-    )
-  );
+  with check (public.is_campaign_gm(campaign_characters.campaign_id, auth.uid()));
 
 create policy "Players can add own characters to campaign"
   on public.campaign_characters for insert
@@ -250,22 +229,12 @@ create policy "Players can add own characters to campaign"
       select 1 from public.characters c
       where c.id = campaign_characters.character_id and c.user_id = auth.uid()
     )
-    and exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_characters.campaign_id and cm.user_id = auth.uid()
-    )
+    and public.is_campaign_member_fn(campaign_characters.campaign_id, auth.uid())
   );
 
 create policy "GMs can remove characters from campaign"
   on public.campaign_characters for delete
-  using (
-    exists (
-      select 1 from public.campaign_members cm
-      where cm.campaign_id = campaign_characters.campaign_id
-        and cm.user_id = auth.uid()
-        and cm.role = 'gm'
-    )
-  );
+  using (public.is_campaign_gm(campaign_characters.campaign_id, auth.uid()));
 
 create policy "Players can remove own characters from campaign"
   on public.campaign_characters for delete
@@ -301,16 +270,14 @@ create policy "Campaign members can read campaign characters"
   using (
     exists (
       select 1 from public.campaign_characters cc
-      join public.campaign_members cm on cm.campaign_id = cc.campaign_id
-      where cc.character_id = characters.id and cm.user_id = auth.uid()
+      where cc.character_id = characters.id
+        and cc.campaign_id in (select public.get_user_campaign_ids(auth.uid()))
     )
   );
 
 create policy "Admins can read all characters"
   on public.characters for select
-  using (
-    exists (select 1 from public.profiles p where p.id = auth.uid() and p.is_admin = true)
-  );
+  using (public.is_admin_fn(auth.uid()));
 
 -- ═══ RPC: Join by invite code ═══════════════════════════════════════════════
 
