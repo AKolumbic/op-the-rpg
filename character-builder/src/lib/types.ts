@@ -58,6 +58,7 @@ export interface CharacterData {
   skillProficiencies: string[];
   toolProficiency: string;
   feats: string[];
+  homeTownFeat: string;
   level: number;
   narrative: NarrativeResponses;
 }
@@ -88,6 +89,7 @@ export const DEFAULT_CHARACTER_DATA: CharacterData = {
   skillProficiencies: [],
   toolProficiency: "",
   feats: [],
+  homeTownFeat: "",
   level: 1,
   narrative: JSON.parse(JSON.stringify(EMPTY_NARRATIVE)),
 };

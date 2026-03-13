@@ -53,7 +53,7 @@ export default function BuilderWizard() {
       case 3:
         return true;
       case 4:
-        return data.feats.length >= 2;
+        return !!data.homeTownFeat && data.feats.length >= (data.humanVariant === "everyman" ? 3 : 2);
       case 5:
         return characterName.trim().length > 0;
       default:

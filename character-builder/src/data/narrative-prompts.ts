@@ -356,6 +356,8 @@ export const FEAT_PROMPT_LABEL = "How did you learn this — or when did you fir
 
 export const FEAT_PLACEHOLDERS: Record<string, string> = {
   "origin": "A mentor? A crisis? Pure instinct?",
+  "origin-story": "It came with the territory. When did it click?",
+  "hometown": "Growing up there, you just... picked it up. How?",
   "fighting-style": "Training? Survival? Years of practice?",
   "general": "Experience? Desperation? Natural talent?",
 };

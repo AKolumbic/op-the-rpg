@@ -158,7 +158,7 @@ export default function CharacterPage() {
           <div className="comic-panel p-4">
             <h3 className="font-display text-xs text-muted tracking-widest uppercase mb-2">Feats</h3>
             <div className="flex flex-wrap gap-2">
-              {data.feats.map((featId) => {
+              {[...(data.homeTownFeat ? [data.homeTownFeat] : []), ...data.feats].map((featId) => {
                 const feat = FEATS.find((f) => f.id === featId);
                 return (
                   <span
