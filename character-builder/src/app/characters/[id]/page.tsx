@@ -27,6 +27,7 @@ import {
 import Navbar from "@/components/Navbar";
 import BackstoryPreview from "@/components/builder/BackstoryPreview";
 import LevelUpModal from "@/components/LevelUpModal";
+import SubclassPickerModal from "@/components/SubclassPickerModal";
 
 export default function CharacterPage() {
   const params = useParams();
@@ -34,6 +35,7 @@ export default function CharacterPage() {
   const [character, setCharacter] = useState<Character | null>(null);
   const [loading, setLoading] = useState(true);
   const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showSubclassPicker, setShowSubclassPicker] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -55,6 +57,14 @@ export default function CharacterPage() {
     const updated = await updateCharacter(character.id, character.name, newData);
     setCharacter(updated);
     setShowLevelUp(false);
+  }
+
+  async function handleSubclassPick(subclassId: string) {
+    if (!character) return;
+    const newData = { ...character.data, subclass: subclassId };
+    const updated = await updateCharacter(character.id, character.name, newData);
+    setCharacter(updated);
+    setShowSubclassPicker(false);
   }
 
   if (loading) {
@@ -82,6 +92,7 @@ export default function CharacterPage() {
   const levelUpCheck = canLevelUp(data);
   const features = getFeaturesUpToLevel(data.originStory, data.level);
   const scalingValues = getScalingValues(data.originStory, data.level);
+  const needsSubclassRetrofit = data.level >= 3 && !data.subclass;
   const subclass = data.subclass ? getSubclass(data.subclass) : null;
   const subclassFeatures = data.subclass
     ? getSubclassFeaturesUpToLevel(data.subclass, data.level)
@@ -136,6 +147,14 @@ export default function CharacterPage() {
               >
                 Dashboard
               </a>
+              {needsSubclassRetrofit && (
+                <button
+                  onClick={() => setShowSubclassPicker(true)}
+                  className="comic-btn bg-comic-blue text-white text-sm"
+                >
+                  Choose Subclass
+                </button>
+              )}
               {levelUpCheck.ok && (
                 <button
                   onClick={() => setShowLevelUp(true)}
@@ -367,6 +386,15 @@ export default function CharacterPage() {
           character={character}
           onConfirm={handleLevelUp}
           onClose={() => setShowLevelUp(false)}
+        />
+      )}
+
+      {/* Subclass Picker (for characters leveled past 3 before subclass system) */}
+      {showSubclassPicker && character && (
+        <SubclassPickerModal
+          originId={data.originStory}
+          onConfirm={handleSubclassPick}
+          onClose={() => setShowSubclassPicker(false)}
         />
       )}
     </div>
