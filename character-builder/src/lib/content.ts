@@ -95,21 +95,28 @@ function parseEntries(markdown: string, skipSections: string[]): ContentEntry[] 
   return entries;
 }
 
+function resolveContentFile(filename: string): string {
+  // In local dev, markdown files are in the parent directory
+  const parentPath = path.join(process.cwd(), "..", filename);
+  if (fs.existsSync(parentPath)) return parentPath;
+  // On Vercel, the prebuild script copies them into content/
+  const contentPath = path.join(process.cwd(), "content", filename);
+  if (fs.existsSync(contentPath)) return contentPath;
+  throw new Error(`Content file not found: ${filename}`);
+}
+
 export function getVariants(): ContentEntry[] {
-  const filePath = path.join(process.cwd(), "..", "human-variants.md");
-  const content = fs.readFileSync(filePath, "utf-8");
+  const content = fs.readFileSync(resolveContentFile("human-variants.md"), "utf-8");
   return parseEntries(content, ["Summary", "Design Notes"]);
 }
 
 export function getOrigins(): ContentEntry[] {
-  const filePath = path.join(process.cwd(), "..", "origin-stories.md");
-  const content = fs.readFileSync(filePath, "utf-8");
+  const content = fs.readFileSync(resolveContentFile("origin-stories.md"), "utf-8");
   return parseEntries(content, ["Summary", "Design Notes", "Multiclassing"]);
 }
 
 export function getHometowns(): ContentEntry[] {
-  const filePath = path.join(process.cwd(), "..", "home-towns.md");
-  const content = fs.readFileSync(filePath, "utf-8");
+  const content = fs.readFileSync(resolveContentFile("home-towns.md"), "utf-8");
   return parseEntries(content, ["Summary", "Design Notes", "Parts of a Home Town"]);
 }
 

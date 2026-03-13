@@ -46,3 +46,4 @@ character-builder/next-env.d.ts
 
 # mcp config
 character-builder/.mcp.json
+.vercel

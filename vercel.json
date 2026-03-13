@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd character-builder && npm run build",
-  "installCommand": "cd character-builder && npm install",
-  "outputDirectory": "character-builder/.next",
-  "framework": "nextjs"
-}
