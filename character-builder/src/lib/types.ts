@@ -60,6 +60,8 @@ export interface CharacterData {
   feats: string[];
   homeTownFeat: string;
   level: number;
+  levelFeats: Record<string, string>;
+  subclass: string;
   narrative: NarrativeResponses;
 }
 
@@ -91,5 +93,7 @@ export const DEFAULT_CHARACTER_DATA: CharacterData = {
   feats: [],
   homeTownFeat: "",
   level: 1,
+  levelFeats: {},
+  subclass: "",
   narrative: JSON.parse(JSON.stringify(EMPTY_NARRATIVE)),
 };

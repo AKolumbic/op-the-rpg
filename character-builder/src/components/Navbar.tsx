@@ -4,23 +4,17 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { useTheme } from "./ThemeProvider";
-import type { User } from "@supabase/supabase-js";
+import { useRole } from "./RoleProvider";
 
 export default function Navbar() {
   const router = useRouter();
   const pathname = usePathname();
   const supabase = createClient();
   const { theme, toggle } = useTheme();
-  const [user, setUser] = useState<User | null>(null);
+  const { user, profile } = useRole();
   const [scrolled, setScrolled] = useState(false);
 
   const isHome = pathname === "/";
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
-    });
-  }, []);
 
   useEffect(() => {
     if (!isHome) {
@@ -42,6 +36,8 @@ export default function Navbar() {
     router.push("/");
   }
 
+  const displayName = profile?.display_name || user?.email;
+
   return (
     <nav
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
@@ -60,6 +56,9 @@ export default function Navbar() {
             <div className="flex items-center gap-4">
               <a href="/dashboard" className="font-display text-sm text-foreground/70 hover:text-accent transition-colors tracking-wide">
                 Dashboard
+              </a>
+              <a href="/campaigns" className="font-display text-sm text-foreground/70 hover:text-accent transition-colors tracking-wide">
+                Campaigns
               </a>
               <a href="/" className="font-display text-sm text-foreground/70 hover:text-accent transition-colors tracking-wide">
                 Explore
@@ -96,7 +95,7 @@ export default function Navbar() {
 
           {user ? (
             <>
-              <span className="text-sm text-muted hidden sm:inline">{user.email}</span>
+              <span className="text-sm text-muted hidden sm:inline">{displayName}</span>
               <button
                 onClick={handleSignOut}
                 className="font-display text-sm text-foreground/60 hover:text-accent transition-colors tracking-wide"

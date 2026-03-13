@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Bangers, Inter } from "next/font/google";
 import "./globals.css";
 import ThemeProvider from "@/components/ThemeProvider";
+import RoleProvider from "@/components/RoleProvider";
 import ZoomLinesBackdrop from "@/components/ZoomLinesBackdrop";
 
 const bangers = Bangers({
@@ -38,8 +39,10 @@ export default function RootLayout({
         className={`${bangers.variable} ${inter.variable} antialiased min-h-screen text-foreground`}
       >
         <ThemeProvider>
-          <ZoomLinesBackdrop />
-          {children}
+          <RoleProvider>
+            <ZoomLinesBackdrop />
+            {children}
+          </RoleProvider>
         </ThemeProvider>
       </body>
     </html>
